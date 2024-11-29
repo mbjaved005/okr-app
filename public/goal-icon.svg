@@ -1,0 +1,32 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="32" cy="32" r="30" stroke="url(#gradient1)" stroke-width="2" fill="none">
+    <animate attributeName="stroke-dasharray" from="0 188.5" to="188.5 188.5" dur="1.5s" fill="freeze" />
+  </circle>
+  <circle cx="32" cy="32" r="22" stroke="url(#gradient2)" stroke-width="2" fill="none">
+    <animate attributeName="stroke-dasharray" from="0 138.2" to="138.2 138.2" dur="1.2s" fill="freeze" />
+  </circle>
+  <circle cx="32" cy="32" r="14" stroke="url(#gradient3)" stroke-width="2" fill="none">
+    <animate attributeName="stroke-dasharray" from="0 87.96" to="87.96 87.96" dur="0.9s" fill="freeze" />
+  </circle>
+  <circle cx="32" cy="32" r="6" fill="url(#gradient4)">
+    <animate attributeName="r" from="0" to="6" dur="0.6s" fill="freeze" />
+  </circle>
+  <defs>
+    <linearGradient id="gradient1" x1="32" y1="0" x2="32" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#3B82F6"/>
+      <stop offset="100%" stop-color="#10B981"/>
+    </linearGradient>
+    <linearGradient id="gradient2" x1="32" y1="8" x2="32" y2="56" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#3B82F6"/>
+      <stop offset="100%" stop-color="#10B981"/>
+    </linearGradient>
+    <linearGradient id="gradient3" x1="32" y1="16" x2="32" y2="48" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#3B82F6"/>
+      <stop offset="100%" stop-color="#10B981"/>
+    </linearGradient>
+    <linearGradient id="gradient4" x1="32" y1="24" x2="32" y2="40" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#3B82F6"/>
+      <stop offset="100%" stop-color="#10B981"/>
+    </linearGradient>
+  </defs>
+</svg>

@@ -20,7 +20,7 @@ const DashboardPage = () => {
     }
   }, []);
 
-  const fetchOKRs = async (token: any) => {
+  const fetchOKRs = async (token) => {
     try {
       console.log("Fetching OKRs for the dashboard");
       const response = await fetch("/api/okr/fetch", {

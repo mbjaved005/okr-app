@@ -1,7 +1,10 @@
 import { MongoClient } from 'mongodb';
-const path = require('path');
+import path from 'path';
+import dotenv from 'dotenv';
+import { ObjectId } from 'mongodb';
+
 const envPath = path.resolve(__dirname, '../../.env');
-require("dotenv").config({ debug: true, path: envPath });
+dotenv.config({ debug: true, path: envPath });
 
 const uri = process.env.MONGODB_URI;
 if (!uri) {
@@ -29,7 +32,6 @@ export const updateMultipleUsersRole = async (userId: string, role: string) => {
     await client.connect();
     const database = client.db('okr-app-2');
     const users = database.collection('users');
-    const { ObjectId } = require('mongodb');
     const result = await users.updateOne({ _id: new ObjectId(userId) }, { $set: { role: role } });
     console.log('Modified Count:', result);
     return result.modifiedCount > 0;

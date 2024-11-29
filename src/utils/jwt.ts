@@ -1,7 +1,9 @@
 import jwt from 'jsonwebtoken';
-const path = require('path');
+import path from 'path';
+import dotenv from 'dotenv';
+
 const envPath = path.resolve(__dirname, '../../.env');
-require("dotenv").config({ debug: true, path: envPath });
+dotenv.config({ debug: true, path: envPath });
 
 export const getToken = (): string | null => {
   if (typeof localStorage === 'undefined') {

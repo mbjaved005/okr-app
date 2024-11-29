@@ -1,11 +1,11 @@
-'use client'; // Ensure this directive is at the top
+"use client"; // Ensure this directive is at the top
 
-import React, { useEffect, useState } from 'react';
-import { getToken } from '@/utils/jwt';
+import React, { useEffect, useState } from "react";
+import { getToken } from "@/utils/jwt";
 
 const DashboardPage = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [okrs, setOkrs] = useState([]); // State to hold fetched OKRs
 
   useEffect(() => {
@@ -16,14 +16,14 @@ const DashboardPage = () => {
       fetchOKRs(token); // Fetch OKRs if authenticated
     } else {
       console.log("User is not authenticated");
-      setError('User not authenticated. Please log in.');
+      setError("User not authenticated. Please log in.");
     }
   }, []);
 
-  const fetchOKRs = async (token) => {
+  const fetchOKRs = async (token: any) => {
     try {
       console.log("Fetching OKRs for the dashboard");
-      const response = await fetch('/api/okr/fetch', {
+      const response = await fetch("/api/okr/fetch", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -36,8 +36,11 @@ const DashboardPage = () => {
         console.error("Failed to fetch OKRs:", await response.text());
       }
     } catch (error) {
-      console.error('Error fetching OKRs:', error);
-      console.error('Stack trace:', error instanceof Error ? error.stack : "No stack trace available");
+      console.error("Error fetching OKRs:", error);
+      console.error(
+        "Stack trace:",
+        error instanceof Error ? error.stack : "No stack trace available"
+      );
     }
   };
 
@@ -47,22 +50,32 @@ const DashboardPage = () => {
   }
 
   return (
-    <div style={{padding: '5px', float: 'left', width: '100%' }}>
+    <div style={{ padding: "5px", float: "left", width: "100%" }}>
       {isAuthenticated ? (
         <div className="okr-container">
           {okrs.length > 0 ? (
             <ul className="okr-list">
-              {okrs.slice(0, okrs.length ).map((okr) => (
-                <li key={okr._id} className="border p-4 mb-2 rounded shadow okr-card">
+              {okrs.slice(0, okrs.length).map((okr) => (
+                <li
+                  key={okr._id}
+                  className="border p-4 mb-2 rounded shadow okr-card"
+                >
                   <h2 className="font-bold">{okr.title}</h2>
                   <p>{okr.description}</p>
-                  <p>Start Date: {new Date(okr.startDate).toLocaleDateString()}</p>
+                  <p>
+                    Start Date: {new Date(okr.startDate).toLocaleDateString()}
+                  </p>
                   <p>End Date: {new Date(okr.endDate).toLocaleDateString()}</p>
                   <p>Category: {okr.category}</p>
                   <p>Vertical: {okr.vertical}</p>
-                  <p>Owners: {okr.owner.map((owner, index) => (
-                    <span key={index} className="tag">{owner}</span>
-                  ))}</p>
+                  <p>
+                    Owners:{" "}
+                    {okr.owner.map((owner, index) => (
+                      <span key={index} className="tag">
+                        {owner}
+                      </span>
+                    ))}
+                  </p>
                 </li>
               ))}
             </ul>

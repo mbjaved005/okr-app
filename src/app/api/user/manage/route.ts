@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { roleMiddleware } from '@/middleware/roleMiddleware';
 
-const checkRole = roleMiddleware(['Admin']); // Only Admin can manage users
+const checkRole = (handler: (request: Request) => Promise<NextResponse>) => roleMiddleware(['Admin']); // Only Admin can manage users
 
 export const POST = checkRole(async (request: Request) => {
   try {

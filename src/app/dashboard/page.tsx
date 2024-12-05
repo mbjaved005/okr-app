@@ -1,27 +1,49 @@
 "use client"; // Ensure this directive is at the top
-
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { getToken } from "@/utils/jwt";
+import { FaEdit, FaTrash } from "react-icons/fa"; // Import delete icon
+import Modal from "react-modal";
+import EditOKRPage from "@/app/edit-okr/[id]";
+import "./deleteOKRConfirmationModal.css"; // Import the new CSS file for delete confirmation modal
+import "@/styles/alert.css"; // Import the new CSS file for modal styles
+import "@/styles/dashboard.css"; // Import the new CSS file for dashboard styles
+import "@/styles/modal.css"; // Import the new CSS file for modal styles
 
 const DashboardPage = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [error, setError] = useState("");
-  const [okrs, setOkrs] = useState([]); // State to hold fetched OKRs
+  const [error, setError] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedOKRId, setSelectedOKRId] = useState<string | null>(null);
+  const [confirmationModalOpen, setConfirmationModalOpen] = useState(false);
+  const [okrToDelete, setOkrToDelete] = useState<string | null>(null);
+  const [okrs, setOkrs] = useState<OKR[]>([]); // State to hold fetched OKRs
+
+  interface OKR {
+    _id: string;
+    title: string;
+    endDate: string;
+    category: string;
+    vertical: string;
+    owner: string[];
+    description: string;
+    startDate: string;
+  }
 
   useEffect(() => {
     const token = getToken();
     if (token) {
       console.log("User is authenticated");
       setIsAuthenticated(true);
-      fetchOKRs(token); // Fetch OKRs if authenticated
+      fetchOKRs(); // Fetch OKRs if authenticated
     } else {
       console.log("User is not authenticated");
       setError("User not authenticated. Please log in.");
     }
   }, []);
 
-  const fetchOKRs = async (token) => {
+  const fetchOKRs = async (): Promise<void> => {
     try {
+      const token = getToken();
       console.log("Fetching OKRs for the dashboard");
       const response = await fetch("/api/okr/fetch", {
         headers: {
@@ -29,8 +51,8 @@ const DashboardPage = () => {
         },
       });
       if (response.ok) {
-        const data = await response.json();
-        console.log("Fetched OKRs:", data); // Log the fetched OKRs
+        const data: OKR[] = await response.json();
+        console.log("Fetched OKRs:", data);
         setOkrs(data); // Set the fetched OKRs to state
       } else {
         console.error("Failed to fetch OKRs:", await response.text());
@@ -41,6 +63,64 @@ const DashboardPage = () => {
         "Stack trace:",
         error instanceof Error ? error.stack : "No stack trace available"
       );
+    }
+  };
+
+  const openModal = (id: string) => {
+    const selectedOKR = okrs.find((okr) => okr._id === id);
+    if (selectedOKR) {
+      console.log("Opening modal for OKR ID:", id); // Log when the modal is opened
+      setSelectedOKRId(id);
+      setIsModalOpen(true);
+    }
+  };
+
+  const closeModal = () => {
+    console.log("Closing modal"); // Log when the modal is closed
+    setIsModalOpen(false);
+    setSelectedOKRId(null);
+  };
+
+  const openConfirmationModal = (id: string) => {
+    setOkrToDelete(id);
+    setConfirmationModalOpen(true);
+  };
+
+  const closeConfirmationModal = () => {
+    setConfirmationModalOpen(false);
+    setOkrToDelete(null);
+  };
+
+  const handleDeleteOKR = async () => {
+    const token = getToken();
+    if (!token || !okrToDelete) return;
+
+    try {
+      const response = await fetch("/api/okr/delete", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ id: okrToDelete }),
+      });
+
+      if (response.ok) {
+        setOkrs((prevOkrs) =>
+          prevOkrs.filter((okr) => okr._id !== okrToDelete)
+        );
+        closeConfirmationModal();
+      } else {
+        const errorData = await response.json();
+        setError(errorData.message || "Error deleting OKR");
+      }
+    } catch (error) {
+      console.error("Error during OKR deletion:", error);
+      console.error(
+        "Stack trace:",
+        error instanceof Error ? error.stack : "No stack trace available"
+      );
+      setError("An unexpected error occurred while deleting OKR.");
     }
   };
 
@@ -55,27 +135,58 @@ const DashboardPage = () => {
         <div className="okr-container">
           {okrs.length > 0 ? (
             <ul className="okr-list">
-              {okrs.slice(0, okrs.length).map((okr) => (
+              {okrs.map((okr) => (
                 <li
                   key={okr._id}
                   className="border p-4 mb-2 rounded shadow okr-card"
                 >
-                  <h2 className="font-bold">{okr.title}</h2>
-                  <p>{okr.description}</p>
-                  <p>
-                    Start Date: {new Date(okr.startDate).toLocaleDateString()}
-                  </p>
-                  <p>End Date: {new Date(okr.endDate).toLocaleDateString()}</p>
-                  <p>Category: {okr.category}</p>
-                  <p>Vertical: {okr.vertical}</p>
-                  <p>
-                    Owners:{" "}
-                    {okr.owner.map((owner, index) => (
-                      <span key={index} className="tag">
-                        {owner}
+                  <div className="okr-header">
+                    <h2 className="font-bold inline-block">{okr.title}</h2>
+                    <button
+                      onClick={() => openModal(okr._id)}
+                      className="text-blue-500 hover:underline ml-2"
+                    >
+                      <FaEdit className="inline-block" /> Edit
+                    </button>
+                    <button
+                      onClick={() => openConfirmationModal(okr._id)}
+                      className="text-red-500 hover:underline ml-2"
+                    >
+                      <FaTrash className="inline-block" /> Delete
+                    </button>
+                  </div>
+                  <div className="okr-details">
+                    <p>
+                      <strong style={{ fontSize: "18px" }}>End Date:</strong>{" "}
+                      <span style={{ fontSize: "18px" }}>
+                        {new Date(okr.endDate).toLocaleDateString()}
                       </span>
-                    ))}
-                  </p>
+                    </p>
+                    <p>
+                      <strong style={{ fontSize: "18px" }}>Category:</strong>{" "}
+                      <span style={{ fontSize: "18px" }}>{okr.category}</span>
+                    </p>
+                    <p>
+                      <strong style={{ fontSize: "18px" }}>Vertical:</strong>{" "}
+                      <span style={{ fontSize: "18px" }}>{okr.vertical}</span>
+                    </p>
+                  </div>
+                  <div className="okr-owners">
+                    <p>
+                      <strong style={{ fontSize: "18px" }}>Owners:</strong>{" "}
+                      <span style={{ fontSize: "18px" }}>
+                        {okr.owner.map((owner, index) => (
+                          <span
+                            key={index}
+                            className="tag"
+                            style={{ fontSize: "16px" }}
+                          >
+                            {owner}
+                          </span>
+                        ))}
+                      </span>
+                    </p>
+                  </div>
                 </li>
               ))}
             </ul>
@@ -86,37 +197,40 @@ const DashboardPage = () => {
       ) : (
         <p>Loading...</p>
       )}
-      <style jsx>{`
-        .okr-container {
-          min-height: 650px; /* Adjust this value as needed */
-        }
-        .okr-list {
-          width: 100%;
-          float: left;
-          text-align: left;
-        }
-        .tag {
-          display: inline-block;
-          background-color: #007bff;
-          color: white;
-          padding: 5px 10px;
-          border-radius: 20px;
-          margin-right: 5px;
-          margin-bottom: 5px;
-        }
-        .okr-card {
-          width: 100%;
-          background-color: white;
-          border: 1px solid black;
-          text-align: left;
-          float: left;
-        }
-        .no-okrs {
-          text-align: center;
-          width: 100%;
-          padding: 20px;
-        }
-      `}</style>
+      <Modal
+        isOpen={isModalOpen}
+        onRequestClose={closeModal}
+        contentLabel="Edit OKR"
+        ariaHideApp={false}
+        className="modal"
+      >
+        {selectedOKRId && (
+          <EditOKRPage
+            params={{ id: selectedOKRId }}
+            initialData={okrs.find((okr) => okr._id === selectedOKRId)}
+            setIsModalOpen={setIsModalOpen} // Pass the function
+            setSelectedOKRId={setSelectedOKRId} // Pass the function
+            onRefresh={fetchOKRs} // Pass the refresh function
+            vertical={okrs.find((okr) => okr._id === selectedOKRId)?.vertical} // Ensure vertical is passed
+          />
+        )}
+      </Modal>
+      <Modal
+        isOpen={confirmationModalOpen}
+        onRequestClose={closeConfirmationModal}
+        contentLabel="Confirm Deletion"
+        className="confirmation-modal" // Apply the new class
+        ariaHideApp={false}
+      >
+        <h2>Confirm Deletion</h2>
+        <p>Are you sure you want to delete this OKR?</p>
+        <button className="confirm-button" onClick={handleDeleteOKR}>
+          Yes, delete
+        </button>
+        <button className="cancel-button" onClick={closeConfirmationModal}>
+          Cancel
+        </button>
+      </Modal>
     </div>
   );
 };

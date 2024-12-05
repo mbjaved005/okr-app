@@ -3,22 +3,17 @@ import mongoose from "@/db/mongoose";
 import OKR from "@/models/OKR";
 import { verifyToken } from "@/utils/jwt";
 
-export async function PUT(request: Request) {
+export async function DELETE(request: Request) {
+  console.log("Delete OKR API called");
   await mongoose.connection.readyState; // Check if the MongoDB connection is active
-  const { id, title, description, startDate, endDate, category, vertical } =
-    await request.json();
-  if (
-    !id ||
-    !title ||
-    !description ||
-    !startDate ||
-    !endDate ||
-    !category ||
-    !vertical
-  ) {
-    console.error("Edit error: All fields are required");
+
+  const { id } = await request.json(); // Extract the OKR ID from the request body
+  console.log("Deleting OKR with ID:", id); // Log the ID being deleted
+
+  if (!id) {
+    console.error("Delete error: OKR ID is required");
     return NextResponse.json(
-      { message: "All fields are required" },
+      { message: "OKR ID is required" },
       { status: 400 }
     );
   }
@@ -36,28 +31,23 @@ export async function PUT(request: Request) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    const userId = decoded.id; // Get the user ID from the decoded token
-
-    const okr = await OKR.findOneAndUpdate(
-      { _id: id, userId: userId },
-      { title, description, startDate, endDate, category, vertical },
-      { new: true }
-    );
-
-    if (!okr) {
-      console.error("Edit error: OKR not found or not authorized");
+    // Find and delete the OKR
+    const result = await OKR.deleteOne({ _id: id, userId: decoded.id });
+    if (result.deletedCount === 0) {
+      console.error("Delete error: OKR not found or not authorized");
       return NextResponse.json(
         { message: "OKR not found or not authorized" },
         { status: 404 }
       );
     }
 
+    console.log("OKR deleted successfully");
     return NextResponse.json(
-      { message: "OKR updated successfully", okr },
+      { message: "OKR deleted successfully" },
       { status: 200 }
     );
   } catch (error) {
-    console.error("Error during OKR edit:", error);
+    console.error("Error during OKR deletion:", error);
     console.error(
       "Stack trace:",
       error instanceof Error ? error.stack : "No stack trace available"

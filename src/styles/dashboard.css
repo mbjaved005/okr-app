@@ -1,0 +1,48 @@
+.okr-container {
+  min-height: 650px; /* Adjust this value as needed */
+  font-family: "Arial, sans-serif"; /* Set font family */
+  font-size: 16px; /* Set base font size */
+}
+.okr-header {
+  display: flex;
+  align-items: center;
+  font-size: 18px; /* Set font size for headers */
+}
+.okr-header h2 {
+  flex-grow: 1;
+  font-size: 20px; /* Set font size for OKR titles */
+}
+.okr-details {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px; /* Add margin to create space */
+  font-size: 16px; /* Set font size for details */
+}
+.okr-owners {
+  margin-top: 20px; /* Add margin to create space */
+  font-size: 16px; /* Set font size for owners */
+}
+.tag {
+  display: inline-block;
+  background-color: #007bff;
+  color: white;
+  padding: 5px 10px;
+  border-radius: 20px;
+  margin-right: 5px;
+  margin-bottom: 5px;
+  font-size: 14px; /* Set font size for tags */
+}
+.okr-card {
+  width: 100%;
+  background-color: white;
+  border: 1px solid black;
+  text-align: left;
+  float: left;
+  font-size: 16px; /* Set font size for card content */
+}
+.no-okrs {
+  text-align: center;
+  width: 100%;
+  padding: 20px;
+  font-size: 18px; /* Set font size for no OKRs message */
+}

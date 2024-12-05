@@ -1,35 +1,33 @@
-import jwt from 'jsonwebtoken';
-import path from 'path';
-import dotenv from 'dotenv';
-
-const envPath = path.resolve(__dirname, '../../.env');
-dotenv.config({ debug: true, path: envPath });
+import jwt from "jsonwebtoken";
+const path = require("path");
+const envPath = path.resolve(__dirname, "../../.env");
+require("dotenv").config({ debug: true, path: envPath });
 
 export const getToken = (): string | null => {
-  if (typeof localStorage === 'undefined') {
+  if (typeof localStorage === "undefined") {
     console.warn("localStorage is not available");
     return null;
   }
   console.log("Retrieving token from local storage");
-  return localStorage.getItem('token'); // Use localStorage instead
+  return localStorage.getItem("token"); // Use localStorage instead
 };
 
 export const setToken = (token: string) => {
-  if (typeof localStorage === 'undefined') {
+  if (typeof localStorage === "undefined") {
     console.warn("localStorage is not available");
     return;
   }
   console.log("Setting token in local storage:", token); // Log the token being set
-  localStorage.setItem('token', token); // Use localStorage instead
+  localStorage.setItem("token", token); // Use localStorage instead
 };
 
 export const removeToken = () => {
-  if (typeof localStorage === 'undefined') {
+  if (typeof localStorage === "undefined") {
     console.warn("localStorage is not available");
     return;
   }
   console.log("Removing token from local storage");
-  localStorage.removeItem('token'); // Use localStorage instead
+  localStorage.removeItem("token"); // Use localStorage instead
 };
 
 export const verifyToken = (token: string) => {
@@ -48,7 +46,10 @@ export const verifyToken = (token: string) => {
     return decoded; // Return the decoded token if verification is successful
   } catch (error) {
     console.error("Token verification failed:", error);
-    console.error("Stack trace:", error instanceof Error ? error.stack : "No stack trace available");
+    console.error(
+      "Stack trace:",
+      error instanceof Error ? error.stack : "No stack trace available"
+    );
     return null;
   }
 };

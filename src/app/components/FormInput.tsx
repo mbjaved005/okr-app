@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 
 interface FormInputProps {
   type: string;
@@ -16,6 +16,7 @@ interface FormInputProps {
   maxLength?: number;
   autoComplete?: string;
   requirements?: string[];
+  options?: string[]; // Add options for select input
 }
 
 const FormInput: React.FC<FormInputProps> = ({
@@ -30,7 +31,8 @@ const FormInput: React.FC<FormInputProps> = ({
   minLength,
   maxLength,
   autoComplete,
-  requirements = []
+  requirements = [],
+  options = [], // Default to empty array
 }) => {
   const [isFocused, setIsFocused] = useState(false);
   const [isValid, setIsValid] = useState(true);
@@ -45,7 +47,9 @@ const FormInput: React.FC<FormInputProps> = ({
 
   const validateInput = (value: string): boolean => {
     if (required && !value) {
-      console.log(`FormInput: ${label} validation failed - required field is empty`);
+      console.log(
+        `FormInput: ${label} validation failed - required field is empty`
+      );
       return false;
     }
     if (pattern && !new RegExp(pattern).test(value)) {
@@ -53,18 +57,24 @@ const FormInput: React.FC<FormInputProps> = ({
       return false;
     }
     if (minLength && value.length < minLength) {
-      console.log(`FormInput: ${label} validation failed - minimum length not met`);
+      console.log(
+        `FormInput: ${label} validation failed - minimum length not met`
+      );
       return false;
     }
     if (maxLength && value.length > maxLength) {
-      console.log(`FormInput: ${label} validation failed - maximum length exceeded`);
+      console.log(
+        `FormInput: ${label} validation failed - maximum length exceeded`
+      );
       return false;
     }
     console.log(`FormInput: ${label} validation passed`);
     return true;
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     const newValue = e.target.value;
     const valid = validateInput(newValue);
     setIsValid(valid);
@@ -74,7 +84,7 @@ const FormInput: React.FC<FormInputProps> = ({
 
   const handleFocus = () => {
     setIsFocused(true);
-    if (type === 'password' && requirements.length > 0) {
+    if (type === "password" && requirements.length > 0) {
       setShowRequirements(true);
     }
     console.log(`FormInput: ${label} focused`);
@@ -89,66 +99,93 @@ const FormInput: React.FC<FormInputProps> = ({
   };
 
   return (
-    <div className="mb-4">
+    <div className="mb-2">
       <label className="block text-sm font-medium text-gray-700 mb-1">
         {label}
         {required && <span className="text-red-500 ml-1">*</span>}
+        {label === "Date" && (
+          <span className="ml-2 text-gray-500" title="Select a date">
+            📅
+          </span>
+        )}
       </label>
-      <motion.div
-        initial={false}
-        animate={{
-          scale: isFocused ? 1.01 : 1,
-          borderColor: !isValid ? '#ef4444' : isFocused ? '#3b82f6' : '#e5e7eb'
-        }}
-        className="relative"
-      >
-        <input
-          type={type}
+      {type === "select" ? (
+        <select
           value={value}
           onChange={handleChange}
           onFocus={handleFocus}
           onBlur={handleBlur}
-          placeholder={placeholder}
           required={required}
-          pattern={pattern}
-          minLength={minLength}
-          maxLength={maxLength}
-          autoComplete={autoComplete}
-          className={`
-            w-full px-4 py-2 border rounded-lg
-            transition-all duration-200 ease-in-out
-            focus:outline-none focus:ring-2
-            ${!isValid ? 'border-red-500 focus:ring-red-200' : 'focus:ring-blue-200'}
-            ${isFocused ? 'border-blue-500' : 'border-gray-300'}
-          `}
-        />
-        {error && !isValid && (
-          <motion.p
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-red-500 text-sm mt-1"
-          >
-            {error}
-          </motion.p>
-        )}
-        {showRequirements && requirements.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="absolute z-10 w-full mt-2 p-3 bg-white border rounded-lg shadow-lg"
-          >
-            <ul className="text-sm text-gray-600 space-y-1">
-              {requirements.map((req, index) => (
-                <li key={index} className="flex items-center">
-                  <span className="mr-2">•</span>
-                  {req}
-                </li>
-              ))}
-            </ul>
-          </motion.div>
-        )}
-      </motion.div>
+          className="w-full form-select styled-input"
+        >
+          <option value="">Select {label.toLowerCase()}</option>
+          {options.map((option) => (
+            <option key={option} value={option}>
+              {option}
+            </option>
+          ))}
+        </select>
+      ) : (
+        <motion.div
+          initial={false}
+          animate={{
+            scale: isFocused ? 1.01 : 1,
+            borderColor: !isValid
+              ? "#ef4444"
+              : isFocused
+              ? "#3b82f6"
+              : "#e5e7eb",
+            boxShadow: isFocused ? "0 4px 8px rgba(0, 0, 0, 0.1)" : "none",
+          }}
+          className="relative rounded-lg"
+        >
+          <input
+            type={type}
+            value={value}
+            onChange={handleChange}
+            onFocus={handleFocus}
+            onBlur={handleBlur}
+            placeholder={placeholder || `Enter ${label.toLowerCase()}`}
+            required={required}
+            pattern={pattern}
+            minLength={minLength}
+            maxLength={maxLength}
+            autoComplete={autoComplete}
+            className={`shadow w-full px-4 py-2 border rounded-lg transition-all duration-200 ease-in-out focus:outline-none focus:ring-2 ${
+              !isValid
+                ? "border-red-500 focus:ring-red-200"
+                : "focus:ring-blue-200"
+            } ${isFocused ? "border-blue-500" : "border-gray-300"}`}
+            aria-label={label}
+          />
+          {error && !isValid && (
+            <motion.p
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-red-500 text-sm mt-1"
+            >
+              {error}
+            </motion.p>
+          )}
+          {showRequirements && requirements.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="absolute w-1/2 bg-gradient-to-r from-green-400 to-green-500 rounded-lg shadow-lg max-h-10 overflow-y-auto p-4"
+            >
+              <ul className="text-sm text-gray-600 space-y-2">
+                {requirements.map((req, index) => (
+                  <li key={index} className="flex items-center">
+                    <span className="mr-2">•</span>
+                    {req}
+                  </li>
+                ))}
+              </ul>
+            </motion.div>
+          )}
+        </motion.div>
+      )}
     </div>
   );
 };

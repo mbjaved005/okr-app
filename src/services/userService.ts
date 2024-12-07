@@ -1,9 +1,7 @@
 import { MongoClient } from "mongodb";
-import path from "path";
-import dotenv from "dotenv";
-
+const path = require("path");
 const envPath = path.resolve(__dirname, "../../.env");
-dotenv.config({ debug: true, path: envPath });
+require("dotenv").config({ debug: true, path: envPath });
 
 const uri = process.env.MONGODB_URI;
 if (!uri) {
@@ -14,7 +12,7 @@ const client = new MongoClient(uri);
 export const getUsers = async () => {
   try {
     await client.connect();
-    const database = client.db("test");
+    const database = client.db("okr-app-2");
     const users = database.collection("users");
     const userList = await users.find({}).toArray();
     return userList;

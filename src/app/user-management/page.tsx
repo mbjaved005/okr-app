@@ -1,7 +1,17 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import Modal from "react-modal";
+
+interface User {
+  _id: string;
+  fullName: string;
+  email: string;
+  role: string;
+}
+import { useEffect, useState } from "react";
 import { getToken } from "@/utils/jwt";
 import "./user-management.css"; // Import the CSS file for styling
+import { FaTrash } from "react-icons/fa"; // Import the delete icon
+import "@/styles/alert.css"; // Import the CSS file for the confirmation modal
 
 const UserManagementPage = () => {
   const [users, setUsers] = useState<User[]>([]);
@@ -13,6 +23,9 @@ const UserManagementPage = () => {
     {}
   );
   const [bulkUpdate, setBulkUpdate] = useState(false); // State to track if bulk update is needed
+  // const [showConfirmation, setShowConfirmation] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<string | null>(null);
+  const [confirmationModalOpen, setConfirmationModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -55,27 +68,7 @@ const UserManagementPage = () => {
           err instanceof Error ? err.stack : "No stack trace available"
         );
         if (err instanceof Error) {
-          if (err instanceof Error) {
-            if (err instanceof Error) {
-              if (err instanceof Error) {
-                if (err instanceof Error) {
-                  if (err instanceof Error) {
-                    setError(err.message);
-                  } else {
-                    setError("An unknown error occurred");
-                  }
-                } else {
-                  setError("An unknown error occurred");
-                }
-              } else {
-                setError("An unknown error occurred");
-              }
-            } else {
-              setError("An unknown error occurred");
-            }
-          } else {
-            setError("An unknown error occurred");
-          }
+          setError(err.message);
         } else {
           setError("An unknown error occurred");
         }
@@ -86,13 +79,6 @@ const UserManagementPage = () => {
 
     fetchUsers();
   }, []);
-
-  interface User {
-    _id: string;
-    fullName: string;
-    email: string;
-    role: string;
-  }
 
   const handleRoleChange = (userId: string, newRole: string) => {
     setUpdatedRoles((prevRoles) => {
@@ -143,11 +129,7 @@ const UserManagementPage = () => {
         "Stack trace:",
         err instanceof Error ? err.stack : "No stack trace available"
       );
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError("An unknown error occurred");
-      }
+      setError(err.message);
     }
   };
 
@@ -186,12 +168,58 @@ const UserManagementPage = () => {
         "Stack trace:",
         err instanceof Error ? err.stack : "No stack trace available"
       );
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError("An unknown error occurred");
-      }
+      setError(err.message);
     }
+  };
+
+  const handleDeleteUser = async (userEmail: string) => {
+    const token = getToken();
+    if (!token) {
+      setError("Unauthorized");
+      return;
+    }
+    try {
+      const response = await fetch(`/api/user/delete/`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ email: userEmail }),
+      });
+      if (response.ok) {
+        setUsers((prevUsers) =>
+          prevUsers.filter((user) => user.email !== userEmail)
+        );
+      } else {
+        throw new Error("Failed to delete user");
+      }
+    } catch (err) {
+      console.error("Error deleting user:", err);
+      console.error(
+        "Stack trace:",
+        err instanceof Error ? err.stack : "No stack trace available"
+      );
+      setError(err.message);
+    }
+  };
+
+  const handleDeleteClick = (userEmail: string) => {
+    console.log(`Deleting user with email: ${userEmail}`);
+    setUserToDelete(userEmail);
+    setConfirmationModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    console.log("Confirming deletion of user:", userToDelete);
+    if (userToDelete) {
+      await handleDeleteUser(userToDelete);
+      setConfirmationModalOpen(false);
+      setUserToDelete(null);
+    }
+  };
+
+  const closeConfirmationModal = () => {
+    setConfirmationModalOpen(false);
   };
 
   // Filter users based on the search term
@@ -226,6 +254,7 @@ const UserManagementPage = () => {
             <th>Email</th>
             <th>Role</th>
             {loggedInUserRole === "Admin" && <th>Actions</th>}
+            {loggedInUserRole === "Admin" && <th>Delete</th>}
           </tr>
         </thead>
         <tbody>
@@ -246,23 +275,48 @@ const UserManagementPage = () => {
                 </select>
               </td>
               {loggedInUserRole === "Admin" && (
-                <td>
-                  <button
-                    onClick={() => handleSingleRoleUpdate(user._id)}
-                    disabled={
-                      !updatedRoles[user._id] ||
-                      updatedRoles[user._id] === user.role
-                    }
-                    className="update-role-button"
-                  >
-                    Update Role
-                  </button>
-                </td>
+                <>
+                  <td>
+                    <button
+                      onClick={() => handleSingleRoleUpdate(user._id)}
+                      disabled={
+                        !updatedRoles[user._id] ||
+                        updatedRoles[user._id] === user.role
+                      }
+                      className="update-role-button"
+                    >
+                      Update Role
+                    </button>
+                  </td>
+                  <td>
+                    <FaTrash
+                      onClick={() => handleDeleteClick(user.email)}
+                      className="delete-user-icon"
+                      style={{ cursor: "pointer", color: "red" }}
+                    />
+                  </td>
+                </>
               )}
             </tr>
           ))}
         </tbody>
       </table>
+      <Modal
+        isOpen={confirmationModalOpen}
+        onRequestClose={closeConfirmationModal}
+        contentLabel="Confirm Deletion"
+        className="confirmation-modal"
+        ariaHideApp={false}
+      >
+        <h2>Confirm Deletion</h2>
+        <p>Are you sure you want to delete this OKR?</p>
+        <button className="confirm-button" onClick={confirmDelete}>
+          Yes, delete
+        </button>
+        <button className="cancel-button" onClick={closeConfirmationModal}>
+          Cancel
+        </button>
+      </Modal>
     </div>
   );
 };

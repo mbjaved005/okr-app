@@ -42,7 +42,10 @@ const ProfileIcon = ({
   }
 
   const handleClickOutside = (event: MouseEvent) => {
-    if (menuRef.current && !(menuRef.current as HTMLElement).contains(event.target as Node)) {
+    if (
+      menuRef.current &&
+      !(menuRef.current as HTMLElement).contains(event.target as Node)
+    ) {
       setIsMenuOpen(false);
     }
   };

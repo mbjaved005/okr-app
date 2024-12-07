@@ -38,8 +38,6 @@ interface OKR {
   endDate: string;
   category: string;
   keyResults: { id: string; title: string; progress: number }[]; // Added keyResults
-  vertical: string;
-  owners: string[];
 }
 
 const formatDate = (dateString: string) => {
@@ -79,6 +77,7 @@ const EditOKRPage = ({
   const [categoryOptions, setCategoryOptions] = useState<string[]>([]); // Add state for category options
   const [owners, setOwners] = useState<string[]>(initialData?.owners || []); // Add state for owners
   const [ownerInput, setOwnerInput] = useState(""); // Add state for owner input
+  const [userOptions, setUserOptions] = useState<string[]>([]);
 
   const handleAddOwner = () => {
     if (ownerInput && !owners.includes(ownerInput)) {
@@ -101,6 +100,51 @@ const EditOKRPage = ({
   useEffect(() => {
     setVerticalOptions(verticalsData.verticals); // Set vertical options from the JSON file
     setCategoryOptions(categoriesData.categories); // Set category options from the JSON file
+  }, []);
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      const token = getToken();
+      if (!token) {
+        console.log("Unauthorized");
+        setError("Unauthorized");
+        return;
+      }
+      try {
+        console.log("Getting all users");
+        const response = await fetch("/api/user/all", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        if (response.ok) {
+          const data = await response.json();
+          console.log("Fetched Users Data:", data);
+          const options = data.map(
+            (item: any) => `${item.fullName} ${item.email}`
+          );
+          setUserOptions(options);
+          console.log("Fetched  Users for owners ", options);
+        } else {
+          const errorMessage = await response.text();
+          console.error("Failed to fetch users:", errorMessage);
+          throw new Error("Failed to fetch users");
+        }
+      } catch (err) {
+        console.error("Error fetching users:", err);
+        console.error(
+          "Stack trace:",
+          err instanceof Error ? err.stack : "No stack trace available"
+        );
+        if (err instanceof Error) {
+          setError(err.message);
+        } else {
+          setError("An unknown error occurred");
+        }
+      }
+    };
+
+    fetchUsers();
   }, []);
 
   useEffect(() => {
@@ -299,14 +343,28 @@ const EditOKRPage = ({
             Owners <span className="text-red-500">*</span>
           </label>
           <div className="flex items-center mb-2">
-            <input
-              type="text"
+            <select
               value={ownerInput}
-              onChange={(e) => setOwnerInput(e.target.value)}
-              onKeyPress={handleOwnerKeyPress}
-              placeholder="Add an owner"
+              onChange={(e) => {
+                const selectedOwner = e.target.value;
+                if (selectedOwner && !owners.includes(selectedOwner)) {
+                  setOwners([...owners, selectedOwner]);
+                  setOwnerInput("");
+                }
+              }}
               className="shadow w-full px-4 py-2 border rounded-lg transition-all duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-200 border-gray-300"
-            />
+            >
+              <option value="" disabled>
+                Select an owner
+              </option>
+              {userOptions
+                .filter((option) => !owners.includes(option))
+                .map((option, index) => (
+                  <option key={index} value={option}>
+                    {option}
+                  </option>
+                ))}
+            </select>
           </div>
           <div className="flex flex-wrap">
             {owners.map((owner) => (
@@ -314,7 +372,7 @@ const EditOKRPage = ({
                 key={owner}
                 className="bg-gray-200 text-gray-700 py-1 px-3 rounded-full mr-2 mb-2 flex items-center"
               >
-                {owner}
+                {owner.split(" ").slice(0, -1).join(" ")}
                 <button
                   type="button"
                   onClick={() => handleRemoveOwner(owner)}

@@ -20,7 +20,7 @@ export async function GET(request: Request) {
     const userId = decoded.id; // Get the user ID from the decoded token
     console.log("Fetching OKRs for user ID:", userId); // Log the user ID being fetched
 
-    const okrs = await OKR.find({ userId: userId }); // Fetch OKRs created by the logged-in user
+    const okrs = await OKR.find(); // Fetch all OKRs without filtering by user ID
     if (okrs.length === 0) {
       console.error("No OKRs found for user ID:", userId); // Log if no OKRs are found
       return NextResponse.json({ message: "No OKRs found" }, { status: 200 });

@@ -1,6 +1,6 @@
 "use client"; // Ensure this directive is at the top
 import { useEffect, useState } from "react";
-import { FaEdit, FaTrash } from "react-icons/fa"; // Import delete icon
+import { FaEdit, FaTrash } from "react-icons/fa"; // Remove FaFilter
 import Modal from "react-modal";
 import { getToken } from "@/utils/jwt";
 import EditOKRPage from "@/app/edit-okr/[id]";
@@ -8,6 +8,7 @@ import CreateOKRPage from "@/app/create-okr/page"; // Import the CreateOKRPage c
 import "@/styles/alert.css"; // Import the new CSS file for modal styles
 import "@/styles/dashboard.css"; // Import the new CSS file for dashboard styles
 import "@/styles/modal.css"; // Import the new CSS file for modal styles
+import "@/styles/tabs.css"; // Import the new CSS file for tabs styles
 
 const DashboardPage = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -17,7 +18,9 @@ const DashboardPage = () => {
   const [confirmationModalOpen, setConfirmationModalOpen] = useState(false);
   const [okrToDelete, setOkrToDelete] = useState<string | null>(null);
   const [okrs, setOkrs] = useState<OKR[]>([]); // State to hold fetched OKRs
-  const [fullName, setFullName] = useState(""); // State to hold the fullName
+  const [selectedTab, setSelectedTab] = useState<"Individual" | "Team">(
+    "Individual"
+  ); // State to hold the selected tab
 
   interface OKR {
     _id: string;
@@ -28,7 +31,6 @@ const DashboardPage = () => {
     owners: string[];
     description: string;
     startDate: string;
-    keyResults: { id: string; title: string; progress: number }[];
   }
 
   useEffect(() => {
@@ -80,7 +82,7 @@ const DashboardPage = () => {
         });
         if (response.ok) {
           const data = await response.json();
-          setFullName(data.fullName || "");
+          // setFullName(data.fullName || '');
         } else {
           console.error("Failed to fetch user data:", await response.text()); // Log the error message
         }
@@ -153,6 +155,8 @@ const DashboardPage = () => {
     }
   };
 
+  const filteredOkrs = okrs.filter((okr) => okr.category === selectedTab); // Filter OKRs based on selected tab
+
   if (error) {
     console.error("Error in DashboardPage:", error);
     return <div>{error}</div>;
@@ -175,9 +179,27 @@ const DashboardPage = () => {
           >
             Create OKR
           </button>
-          {okrs.length > 0 ? (
+          <div className="tabs-container">
+            <div className="tabs">
+              <button
+                className={`tab ${
+                  selectedTab === "Individual" ? "active" : ""
+                }`}
+                onClick={() => setSelectedTab("Individual")}
+              >
+                Individual
+              </button>
+              <button
+                className={`tab ${selectedTab === "Team" ? "active" : ""}`}
+                onClick={() => setSelectedTab("Team")}
+              >
+                Team
+              </button>
+            </div>
+          </div>
+          {filteredOkrs.length > 0 ? (
             <ul className="okr-list">
-              {okrs.map((okr) => (
+              {filteredOkrs.map((okr) => (
                 <li
                   key={okr._id}
                   className="border p-4 mb-2 rounded shadow okr-card"
@@ -223,7 +245,7 @@ const DashboardPage = () => {
                             className="tag"
                             style={{ fontSize: "16px" }}
                           >
-                            {owner}
+                            {owner.split(" ").slice(0, -1).join(" ")}
                           </span>
                         ))}
                       </span>
@@ -253,12 +275,13 @@ const DashboardPage = () => {
             setIsModalOpen={setIsModalOpen} // Pass the function
             setSelectedOKRId={setSelectedOKRId} // Pass the function
             onRefresh={fetchOKRs} // Pass the refresh function
-            // vertical={okrs.find((okr) => okr._id === selectedOKRId)?.vertical} // Ensure vertical is passed
+            vertical={okrs.find((okr) => okr._id === selectedOKRId)?.vertical} // Ensure vertical is passed
           />
         ) : (
           <CreateOKRPage
             setIsModalOpen={setIsModalOpen} // Pass the function
             onRefresh={fetchOKRs} // Pass the refresh function
+            category={selectedTab} // Pass the selected category
           />
         )}
       </Modal>

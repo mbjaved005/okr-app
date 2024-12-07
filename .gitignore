@@ -2,7 +2,6 @@
 
 # dependencies
 node_modules
-.next
 /.pnp
 .pnp.*
 .yarn/*
@@ -15,7 +14,7 @@ node_modules
 /coverage
 
 # next.js
-./okr-app-2/.next/
+.next
 /out/
 
 # production

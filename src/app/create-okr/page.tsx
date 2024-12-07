@@ -10,20 +10,23 @@ import FormInput from "@/app/components/FormInput";
 const CreateOKRPage = ({
   setIsModalOpen,
   onRefresh,
+  category: defaultCategory,
 }: {
   setIsModalOpen: (isOpen: boolean) => void;
   onRefresh: () => void;
+  category: string;
 }) => {
   const router = useRouter();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [category, setCategory] = useState("");
+  const [category, setCategory] = useState(defaultCategory); // Set default category
   const [owners, setOwners] = useState<string[]>([]);
   const [vertical, setVertical] = useState("");
   const [error, setError] = useState("");
   const [ownerInput, setOwnerInput] = useState("");
+  const [userOptions, setUserOptions] = useState<string[]>([]);
 
   const verticalOptions = verticalsData.verticals;
   const categoryOptions = categoriesData.categories; // Get category options from JSON
@@ -31,10 +34,55 @@ const CreateOKRPage = ({
   useEffect(() => {
     console.log("CreateOKRPage component mounted");
     const fetchFullName = async () => {
-      const fullName = await getUserFullName();
-      setOwners([fullName]); // Set the user's full name as the default owners
+      const selectedOwner = await getUserFullName();
+      setOwners([selectedOwner]);
     };
     fetchFullName();
+  }, []);
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      const token = getToken();
+      if (!token) {
+        console.log("Unauthorized");
+        setError("Unauthorized");
+        return;
+      }
+      try {
+        console.log("Getting all users");
+        const response = await fetch("/api/user/all", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        if (response.ok) {
+          const data = await response.json();
+          console.log("Fetched Users Data:", data);
+          const options = data.map(
+            (item: any) => `${item.fullName} ${item.email}`
+          );
+          setUserOptions(options);
+          console.log("Fetched  Users for owners ", options);
+        } else {
+          const errorMessage = await response.text();
+          console.error("Failed to fetch users:", errorMessage);
+          throw new Error("Failed to fetch users");
+        }
+      } catch (err) {
+        console.error("Error fetching users:", err);
+        console.error(
+          "Stack trace:",
+          err instanceof Error ? err.stack : "No stack trace available"
+        );
+        if (err instanceof Error) {
+          setError(err.message);
+        } else {
+          setError("An unknown error occurred");
+        }
+      }
+    };
+
+    fetchUsers();
   }, []);
 
   interface Tag {
@@ -44,13 +92,6 @@ const CreateOKRPage = ({
 
   const handleDelete = (owner: string): void => {
     setOwners(owners.filter((o) => o !== owner));
-  };
-
-  const handleAddition = (tag: Tag) => {
-    if (ownerInput && !owners.includes(ownerInput)) {
-      setOwners([...owners, ownerInput]);
-      setOwnerInput("");
-    }
   };
 
   const closeModal = () => {
@@ -140,7 +181,7 @@ const CreateOKRPage = ({
         className="shadow-sm w-full max-w-sm bg-green-50 p-8 rounded-lg border border-black"
       >
         <div className="flex justify-between items-center mb-4">
-          <h1 className="text-2xl font-bold">Edit OKR</h1>
+          <h1 className="text-2xl font-bold">Create OKR</h1>
           <button onClick={closeModal} className="close-button">
             &times;
           </button>
@@ -195,20 +236,28 @@ const CreateOKRPage = ({
             Owners <span className="text-red-500">*</span>
           </label>
           <div className="flex items-center mb-2">
-            <input
-              type="text"
+            <select
               value={ownerInput}
-              onChange={(e) => setOwnerInput(e.target.value)}
-              placeholder="Add an owner"
-              className="shadow w-full px-4 py-2 border rounded-lg transition-all duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-200 border-gray-300"
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && ownerInput.trim() !== "") {
-                  handleAddition({ id: ownerInput, text: ownerInput });
+              onChange={(e) => {
+                const selectedOwner = e.target.value;
+                if (selectedOwner && !owners.includes(selectedOwner)) {
+                  setOwners([...owners, selectedOwner]);
                   setOwnerInput("");
-                  e.preventDefault();
                 }
               }}
-            />
+              className="shadow w-full px-4 py-2 border rounded-lg transition-all duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-200 border-gray-300"
+            >
+              <option value="" disabled>
+                Select an owner
+              </option>
+              {userOptions
+                .filter((option) => !owners.includes(option))
+                .map((option, index) => (
+                  <option key={index} value={option}>
+                    {option}
+                  </option>
+                ))}
+            </select>
           </div>
           <div className="flex flex-wrap">
             {owners.map((owner) => (
@@ -216,7 +265,7 @@ const CreateOKRPage = ({
                 key={owner}
                 className="bg-gray-200 text-gray-700 py-1 px-3 rounded-full mr-2 mb-2 flex items-center"
               >
-                {owner}
+                {owner.split(" ").slice(0, -1).join(" ")}
                 <button
                   type="button"
                   onClick={() => handleDelete(owner)}

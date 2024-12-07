@@ -1,9 +1,7 @@
-import mongoose from "mongoose";
-import path from "path";
-import dotenv from "dotenv";
-
+const mongoose = require("mongoose");
+const path = require("path");
 const envPath = path.resolve(__dirname, "../../.env");
-dotenv.config({ debug: true, path: envPath });
+require("dotenv").config({ debug: true, path: envPath });
 
 const mongoURI = process.env.MONGODB_URI; // INPUT_REQUIRED {MongoDB connection string}
 const jwtSecret = process.env.JWT_SECRET; // JWT secret

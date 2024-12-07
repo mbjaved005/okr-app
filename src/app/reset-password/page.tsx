@@ -143,7 +143,7 @@ const ResetPasswordPage = ({ getEmail }: { getEmail: string }) => {
               value={getEmail}
               required
               onChange={() => {}}
-              disabled={true}
+              disabled={false}
             />
             <button
               type="submit"

@@ -1,0 +1,91 @@
+.user-management-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  min-height: 100vh;
+  width: 101%;
+  max-width: 101%;
+  margin: 0 auto; /* Center the page */
+}
+
+.search-input {
+  width: 100%;
+  max-width: 600px;
+  padding: 10px;
+  margin-bottom: 20px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  width: 101%;
+  max-width: 101%;
+  font-size: 16px;
+  background-color: #f9f9f9;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.search-input:focus {
+  border-color: #007bff;
+  background-color: #fff;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  outline: none;
+}
+
+.bulk-update-button {
+  padding: 10px 20px;
+  margin-bottom: 20px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.bulk-update-button:hover {
+  background-color: #0056b3;
+}
+
+.user-table {
+  width: 101%;
+  max-width: 101%; /* Increase the maximum width to match the parent */
+  border-collapse: collapse;
+  background-color: white;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.user-table th,
+.user-table td {
+  padding: 12px 15px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+
+.user-table th {
+  background-color: #f2f2f2;
+}
+
+.role-select {
+  padding: 5px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.update-role-button {
+  background: none;
+  border: none;
+  color: blue;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.update-role-button:disabled {
+  color: inherit;
+  cursor: default;
+  text-decoration: none;
+}
+
+.loading,
+.error {
+  font-size: 18px;
+  color: #333;
+}

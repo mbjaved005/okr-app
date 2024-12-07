@@ -1,10 +1,10 @@
 "use client"; // Ensure this directive is at the top
 import { useEffect, useState } from "react";
-import { getToken } from "@/utils/jwt";
 import { FaEdit, FaTrash } from "react-icons/fa"; // Import delete icon
 import Modal from "react-modal";
+import { getToken } from "@/utils/jwt";
 import EditOKRPage from "@/app/edit-okr/[id]";
-import "./deleteOKRConfirmationModal.css"; // Import the new CSS file for delete confirmation modal
+import CreateOKRPage from "@/app/create-okr/page"; // Import the CreateOKRPage component
 import "@/styles/alert.css"; // Import the new CSS file for modal styles
 import "@/styles/dashboard.css"; // Import the new CSS file for dashboard styles
 import "@/styles/modal.css"; // Import the new CSS file for modal styles
@@ -17,6 +17,7 @@ const DashboardPage = () => {
   const [confirmationModalOpen, setConfirmationModalOpen] = useState(false);
   const [okrToDelete, setOkrToDelete] = useState<string | null>(null);
   const [okrs, setOkrs] = useState<OKR[]>([]); // State to hold fetched OKRs
+  const [fullName, setFullName] = useState(""); // State to hold the fullName
 
   interface OKR {
     _id: string;
@@ -24,9 +25,10 @@ const DashboardPage = () => {
     endDate: string;
     category: string;
     vertical: string;
-    owner: string[];
+    owners: string[];
     description: string;
     startDate: string;
+    keyResults: { id: string; title: string; progress: number }[];
   }
 
   useEffect(() => {
@@ -66,6 +68,29 @@ const DashboardPage = () => {
     }
   };
 
+  useEffect(() => {
+    const fetchUserData = async () => {
+      const token = getToken(); // Retrieve the token from local storage
+      if (token) {
+        console.log("Fetching user data with token:", token); // Log the token being used for the fetch
+        const response = await fetch("/api/user/profile", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setFullName(data.fullName || "");
+        } else {
+          console.error("Failed to fetch user data:", await response.text()); // Log the error message
+        }
+      } else {
+        console.warn("No token found, user not authenticated");
+      }
+    };
+    fetchUserData();
+  }, []);
+
   const openModal = (id: string) => {
     const selectedOKR = okrs.find((okr) => okr._id === id);
     if (selectedOKR) {
@@ -78,7 +103,11 @@ const DashboardPage = () => {
   const closeModal = () => {
     console.log("Closing modal"); // Log when the modal is closed
     setIsModalOpen(false);
+  };
+
+  const openCreateModal = () => {
     setSelectedOKRId(null);
+    setIsModalOpen(true);
   };
 
   const openConfirmationModal = (id: string) => {
@@ -133,6 +162,19 @@ const DashboardPage = () => {
     <div style={{ padding: "5px", float: "left", width: "100%" }}>
       {isAuthenticated ? (
         <div className="okr-container">
+          <button
+            onClick={openCreateModal}
+            className="create-okr-btn primary-btn bg-blue-500"
+            style={{
+              float: "right",
+              color: "white",
+              padding: "10px 20px",
+              borderRadius: "5px",
+              marginBottom: "20px",
+            }}
+          >
+            Create OKR
+          </button>
           {okrs.length > 0 ? (
             <ul className="okr-list">
               {okrs.map((okr) => (
@@ -175,7 +217,7 @@ const DashboardPage = () => {
                     <p>
                       <strong style={{ fontSize: "18px" }}>Owners:</strong>{" "}
                       <span style={{ fontSize: "18px" }}>
-                        {okr.owner.map((owner, index) => (
+                        {okr.owners.map((owner, index) => (
                           <span
                             key={index}
                             className="tag"
@@ -200,18 +242,23 @@ const DashboardPage = () => {
       <Modal
         isOpen={isModalOpen}
         onRequestClose={closeModal}
-        contentLabel="Edit OKR"
+        contentLabel="Create/Edit OKR"
         ariaHideApp={false}
         className="modal"
       >
-        {selectedOKRId && (
+        {selectedOKRId ? (
           <EditOKRPage
             params={{ id: selectedOKRId }}
             initialData={okrs.find((okr) => okr._id === selectedOKRId)}
             setIsModalOpen={setIsModalOpen} // Pass the function
             setSelectedOKRId={setSelectedOKRId} // Pass the function
             onRefresh={fetchOKRs} // Pass the refresh function
-            vertical={okrs.find((okr) => okr._id === selectedOKRId)?.vertical} // Ensure vertical is passed
+            // vertical={okrs.find((okr) => okr._id === selectedOKRId)?.vertical} // Ensure vertical is passed
+          />
+        ) : (
+          <CreateOKRPage
+            setIsModalOpen={setIsModalOpen} // Pass the function
+            onRefresh={fetchOKRs} // Pass the refresh function
           />
         )}
       </Modal>

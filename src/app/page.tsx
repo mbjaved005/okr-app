@@ -1,21 +1,19 @@
 "use client";
-import Link from "next/link";
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
-import { getToken } from "@/utils/jwt"; // Import the utility for managing JWT
+import Link from "next/link";
+import { getToken } from "@/utils/jwt";
 import { getInitials } from "@/utils/helpers";
-import Dashboard from "./dashboard/page"; // Adjust the import based on your project structure
-import ProfilePage from "./profile/page"; // Adjust the import based on your project structure
-import ResetPasswordPage from "./reset-password/page";
-import UserManagementPage from "./user-management/page";
-import CreateOKRPage from "./create-okr/page";
+import DashboardPage from "./dashboard/page";
 import ProfileIcon from "@/app/components/ProfileIcon"; // Import the ProfileIcon component
+import ResetPasswordPage from "@/app/reset-password/page"; // Import the ResetPasswordPage component
+import UserManagementPage from "@/app/user-management/page"; // Import the UserManagementPage component
 
 const HomePage = () => {
-  const [selectedTab, setSelectedTab] = useState("dashboard");
-  const pathname = usePathname();
   const [fullName, setFullName] = useState(""); // State to hold the fullName
+  const [email, setEmail] = useState(""); // State to hold the email
   const initials = getInitials(fullName);
+  const pathname = usePathname(); // Get the current pathname
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -29,8 +27,8 @@ const HomePage = () => {
         });
         if (response.ok) {
           const data = await response.json();
-          setFullName(data.fullName || ""); // Set the fullName state
-          setSelectedTab("dashboard"); // Redirect to dashboard upon login
+          setFullName(data.fullName || "");
+          setEmail(data.email || "");
         } else {
           console.error("Failed to fetch user data:", await response.text()); // Log the error message
         }
@@ -40,17 +38,6 @@ const HomePage = () => {
     };
     fetchUserData();
   }, []);
-
-  useEffect(() => {
-    const path = pathname.split("/")[1];
-    setSelectedTab(path || "dashboard");
-  }, [pathname]);
-
-  useEffect(() => {
-    if (selectedTab === "create-okr") {
-      window.scrollTo(0, 0);
-    }
-  }, [selectedTab]);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-green-100 p-4">
@@ -67,29 +54,19 @@ const HomePage = () => {
         {" "}
         OKR Application (Beta Version)
       </h1>
-      <div className="absolute top-4 right-4">
-        {" "}
-        {/* Position the ProfileIcon at the top right */}
-        <ProfileIcon initials={initials} fullName={fullName} />
-      </div>
-      <div className="w-full flex justify-end p-1">
-        <Link
-          href="/create-okr"
-          onClick={() => {
-            setSelectedTab("create-okr");
-          }}
-        >
-          <button className="bg-blue-500 text-white px-3 py-3 rounded hover:bg-green-700">
-            Create OKR
-          </button>
-        </Link>
+      <div id="profile-icon-home" className="absolute top-4 right-4">
+        <ProfileIcon
+          initials={initials}
+          fullName={fullName}
+          setFullName={setFullName}
+        />
       </div>
       <div className="w-full flex flex-col items-center">
-        {selectedTab === "dashboard" && <Dashboard />}
-        {selectedTab === "create-okr" && <CreateOKRPage />}
-        {selectedTab === "profile" && <ProfilePage />}
-        {selectedTab === "reset-password" && <ResetPasswordPage />}
-        {selectedTab === "user-management" && <UserManagementPage />}
+        {pathname === "/dashboard" && <DashboardPage />}
+        {pathname === "/reset-password" && (
+          <ResetPasswordPage getEmail={email} />
+        )}
+        {pathname === "/user-management" && <UserManagementPage />}
       </div>
     </div>
   );

@@ -21,12 +21,11 @@ export async function GET(request: Request) {
     console.log("Fetching OKRs for user ID:", userId); // Log the user ID being fetched
 
     const okrs = await OKR.find({ userId: userId }); // Fetch OKRs created by the logged-in user
-    if (!okrs.length) {
+    if (okrs.length === 0) {
       console.error("No OKRs found for user ID:", userId); // Log if no OKRs are found
-      return NextResponse.json({ message: "No OKRs found" }, { status: 404 });
+      return NextResponse.json({ message: "No OKRs found" }, { status: 200 });
     }
-
-    console.log("Fetched OKRs:", okrs); // Log the fetched OKRs
+    console.log("Fetched OKRs:", okrs);
     return NextResponse.json(okrs);
   } catch (error) {
     console.error("Error fetching OKR:", error);

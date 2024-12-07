@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { getToken } from "@/utils/jwt";
 import FormInput from "@/app/components/FormInput";
 import verticalsData from "@/data/verticals.json"; // Import verticals data
+import categoriesData from "@/data/categories.json"; // Import categories data
 import "./styles.css";
 
 interface Params {
@@ -36,6 +37,9 @@ interface OKR {
   startDate: string;
   endDate: string;
   category: string;
+  keyResults: { id: string; title: string; progress: number }[]; // Added keyResults
+  vertical: string;
+  owners: string[];
 }
 
 const formatDate = (dateString: string) => {
@@ -72,9 +76,31 @@ const EditOKRPage = ({
   const [error, setError] = useState("");
   const [vertical, setVertical] = useState(initialData?.vertical || ""); // Add state for vertical
   const [verticalOptions, setVerticalOptions] = useState<string[]>([]); // Add state for vertical options
+  const [categoryOptions, setCategoryOptions] = useState<string[]>([]); // Add state for category options
+  const [owners, setOwners] = useState<string[]>(initialData?.owners || []); // Add state for owners
+  const [ownerInput, setOwnerInput] = useState(""); // Add state for owner input
+
+  const handleAddOwner = () => {
+    if (ownerInput && !owners.includes(ownerInput)) {
+      setOwners([...owners, ownerInput]);
+      setOwnerInput("");
+    }
+  };
+
+  const handleRemoveOwner = (owner: string) => {
+    setOwners(owners.filter((o) => o !== owner));
+  };
+
+  const handleOwnerKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleAddOwner();
+    }
+  };
 
   useEffect(() => {
     setVerticalOptions(verticalsData.verticals); // Set vertical options from the JSON file
+    setCategoryOptions(categoriesData.categories); // Set category options from the JSON file
   }, []);
 
   useEffect(() => {
@@ -99,6 +125,7 @@ const EditOKRPage = ({
             setEndDate(formatDate(okr.endDate));
             setCategory(okr.category);
             setVertical(okr.vertical);
+            setOwners(okr.owners || []);
           } else {
             console.error(
               "Failed to fetch OKR details:",
@@ -133,6 +160,29 @@ const EditOKRPage = ({
     e.preventDefault();
     const token = getToken();
     setError("");
+
+    // Validation for empty fields
+    if (
+      !title ||
+      !description ||
+      !startDate ||
+      !endDate ||
+      !category ||
+      !vertical ||
+      owners.length === 0
+    ) {
+      setError("All fields are required");
+      return;
+    }
+
+    // Validation for date logic
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    if (end <= start) {
+      setError("End date must be after start date");
+      return;
+    }
+
     console.log("Submitting OKR update with the following data:", {
       id,
       title,
@@ -140,7 +190,8 @@ const EditOKRPage = ({
       startDate,
       endDate,
       category,
-      vertical, // Log the vertical being submitted
+      vertical,
+      owners,
     });
 
     try {
@@ -158,7 +209,8 @@ const EditOKRPage = ({
           endDate,
           category,
           vertical,
-        }),
+          owners,
+        }), // Send key results
       });
 
       if (response.ok) {
@@ -187,7 +239,7 @@ const EditOKRPage = ({
     <div className="flex flex-col items-center justify-center">
       <form
         onSubmit={handleSubmit}
-        className="shadow-sm w-full max-w-sm bg-white p-8 rounded-lg border border-black"
+        className="shadow-sm w-full max-w-sm bg-green-50 p-8 rounded-lg border border-black"
       >
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-2xl font-bold">Edit OKR</h1>
@@ -232,7 +284,7 @@ const EditOKRPage = ({
           value={category}
           onChange={setCategory}
           required
-          options={["Department A", "Department B"]}
+          options={categoryOptions}
         />
         <FormInput
           type="select"
@@ -242,9 +294,46 @@ const EditOKRPage = ({
           required
           options={verticalOptions}
         />
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Owners <span className="text-red-500">*</span>
+          </label>
+          <div className="flex items-center mb-2">
+            <input
+              type="text"
+              value={ownerInput}
+              onChange={(e) => setOwnerInput(e.target.value)}
+              onKeyPress={handleOwnerKeyPress}
+              placeholder="Add an owner"
+              className="shadow w-full px-4 py-2 border rounded-lg transition-all duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-200 border-gray-300"
+            />
+          </div>
+          <div className="flex flex-wrap">
+            {owners.map((owner) => (
+              <span
+                key={owner}
+                className="bg-gray-200 text-gray-700 py-1 px-3 rounded-full mr-2 mb-2 flex items-center"
+              >
+                {owner}
+                <button
+                  type="button"
+                  onClick={() => handleRemoveOwner(owner)}
+                  className="ml-2 text-red-500"
+                >
+                  &times;
+                </button>
+              </span>
+            ))}
+          </div>
+        </div>
         <button
           type="submit"
-          className="w-full py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          className={`w-full py-2 text-white rounded ${
+            owners.length > 0
+              ? "bg-blue-500 hover:bg-blue-600"
+              : "bg-gray-400 cursor-not-allowed"
+          }`}
+          disabled={owners.length === 0}
         >
           Update OKR
         </button>

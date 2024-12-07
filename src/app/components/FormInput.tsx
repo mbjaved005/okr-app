@@ -16,7 +16,8 @@ interface FormInputProps {
   maxLength?: number;
   autoComplete?: string;
   requirements?: string[];
-  options?: string[]; // Add options for select input
+  options?: string[];
+  disabled?: boolean;
 }
 
 const FormInput: React.FC<FormInputProps> = ({
@@ -33,6 +34,7 @@ const FormInput: React.FC<FormInputProps> = ({
   autoComplete,
   requirements = [],
   options = [], // Default to empty array
+  disabled,
 }) => {
   const [isFocused, setIsFocused] = useState(false);
   const [isValid, setIsValid] = useState(true);
@@ -75,11 +77,20 @@ const FormInput: React.FC<FormInputProps> = ({
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
+    if (type === "date" && isNaN(Date.parse(e.target.value))) {
+      return; // Prevent text input for date type
+    }
     const newValue = e.target.value;
     const valid = validateInput(newValue);
     setIsValid(valid);
     onChange(newValue);
     console.log(`FormInput: ${label} value changed to ${newValue}`);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (type === "date") {
+      e.preventDefault(); // Prevent typing in date input
+    }
   };
 
   const handleFocus = () => {
@@ -103,11 +114,6 @@ const FormInput: React.FC<FormInputProps> = ({
       <label className="block text-sm font-medium text-gray-700 mb-1">
         {label}
         {required && <span className="text-red-500 ml-1">*</span>}
-        {label === "Date" && (
-          <span className="ml-2 text-gray-500" title="Select a date">
-            📅
-          </span>
-        )}
       </label>
       {type === "select" ? (
         <select
@@ -116,7 +122,11 @@ const FormInput: React.FC<FormInputProps> = ({
           onFocus={handleFocus}
           onBlur={handleBlur}
           required={required}
-          className="w-full form-select styled-input"
+          className={`w-full form-select px-4 py-2 border rounded-lg transition-all duration-200 ease-in-out focus:outline-none focus:ring-2 ${
+            !isValid
+              ? "border-red-500 focus:ring-red-200"
+              : "focus:ring-blue-200"
+          } ${isFocused ? "border-blue-500" : "border-gray-300"}`}
         >
           <option value="">Select {label.toLowerCase()}</option>
           {options.map((option) => (
@@ -145,6 +155,7 @@ const FormInput: React.FC<FormInputProps> = ({
             onChange={handleChange}
             onFocus={handleFocus}
             onBlur={handleBlur}
+            onKeyDown={handleKeyDown} // Add onKeyDown handler
             placeholder={placeholder || `Enter ${label.toLowerCase()}`}
             required={required}
             pattern={pattern}
@@ -157,6 +168,7 @@ const FormInput: React.FC<FormInputProps> = ({
                 : "focus:ring-blue-200"
             } ${isFocused ? "border-blue-500" : "border-gray-300"}`}
             aria-label={label}
+            disabled={disabled}
           />
           {error && !isValid && (
             <motion.p

@@ -1,29 +1,38 @@
-"use client"
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { getToken } from '@/utils/jwt';
-import './CreateOKRPage.css';
-import verticalsData from '@/data/verticals.json';
-import { WithContext as ReactTags } from 'react-tag-input';
-import {getUserFullName} from '@/utils/auth';
-const CreateOKRPage = () => {
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
-  const [category, setCategory] = useState('');
-  const [owners, setOwners] = useState<Tag[]>([]);
-  const [vertical, setVertical] = useState('');
-  const [error, setError] = useState('');
+"use client";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { getToken } from "@/utils/jwt";
+import { getUserFullName } from "@/utils/auth";
+import verticalsData from "@/data/verticals.json";
+import categoriesData from "@/data/categories.json"; // Import categories data
+import FormInput from "@/app/components/FormInput";
+
+const CreateOKRPage = ({
+  setIsModalOpen,
+  onRefresh,
+}: {
+  setIsModalOpen: (isOpen: boolean) => void;
+  onRefresh: () => void;
+}) => {
   const router = useRouter();
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [category, setCategory] = useState("");
+  const [owners, setOwners] = useState<string[]>([]);
+  const [vertical, setVertical] = useState("");
+  const [error, setError] = useState("");
+  const [ownerInput, setOwnerInput] = useState("");
 
   const verticalOptions = verticalsData.verticals;
+  const categoryOptions = categoriesData.categories; // Get category options from JSON
 
   useEffect(() => {
     console.log("CreateOKRPage component mounted");
     const fetchFullName = async () => {
       const fullName = await getUserFullName();
-      setOwners([{ id: 'default-owner', text: fullName }]); // Set the user's full name as the default owner
+      setOwners([fullName]); // Set the user's full name as the default owners
     };
     fetchFullName();
   }, []);
@@ -33,161 +42,203 @@ const CreateOKRPage = () => {
     text: string;
   }
 
-  const handleDelete = (i: number): void => {
-    const newOwners = owners.slice(0);
-    newOwners.splice(i, 1);
-    setOwners(newOwners);
+  const handleDelete = (owner: string): void => {
+    setOwners(owners.filter((o) => o !== owner));
   };
 
   const handleAddition = (tag: Tag) => {
-    setOwners([...owners, tag]);
+    if (ownerInput && !owners.includes(ownerInput)) {
+      setOwners([...owners, ownerInput]);
+      setOwnerInput("");
+    }
   };
 
+  const closeModal = () => {
+    setIsModalOpen(false); // Close the modal
+  };
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     console.log("handleSubmit called");
-    if (!title || !description || !startDate || !endDate || !category || owners.length === 0 || !vertical) {
-      setError('All fields are required');
+
+    // Validation for empty fields
+    if (
+      !title ||
+      !description ||
+      !startDate ||
+      !endDate ||
+      !category ||
+      owners.length === 0 ||
+      !vertical
+    ) {
+      setError("All fields are required");
       return;
     }
+
+    // Validation for date logic
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    if (end <= start) {
+      setError("End date must be after start date");
+      return;
+    }
+
     const token = getToken();
-    console.log("Submitting OKR with values:", { title, description, startDate, endDate, category, owners, vertical });
+    console.log("Submitting OKR with values:", {
+      title,
+      description,
+      startDate,
+      endDate,
+      category,
+      owners,
+      vertical,
+    });
     try {
-      const response = await fetch('/api/okr/create', {
-        method: 'POST',
+      const response = await fetch("/api/okr/create", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ title, description, startDate, endDate, category, owners: owners.map(owner => owner.text), vertical }),
+        body: JSON.stringify({
+          title,
+          description,
+          startDate,
+          endDate,
+          category,
+          owners: owners,
+          vertical,
+        }),
       });
 
       console.log("Response from OKR creation API:", response);
 
       if (response.ok) {
-        router.push('/dashboard');
+        console.log(
+          "OKR created successfully, closing modal and refreshing dashboard"
+        );
+        closeModal();
+        onRefresh();
+        router.push("/dashboard");
       } else {
         const data = await response.json();
-        setError(data.message || 'Error creating OKR');
+        setError(data.message || "Error creating OKR");
       }
     } catch (error) {
-      console.error('Error during OKR creation:', error);
-      console.error('Stack trace:', error instanceof Error ? error.stack : "No stack trace available");
-      setError('An unexpected error occurred while creating OKR.');
+      console.error("Error during OKR creation:", error);
+      console.error(
+        "Stack trace:",
+        error instanceof Error ? error.stack : "No stack trace available"
+      );
+      setError("An unexpected error occurred while creating OKR.");
     }
   };
 
   return (
-    <div className="flex flex-col container min-h-screen" style={{ backgroundColor: '#f0f4f8', marginTop:"20px"}}>
-      {error && <div className="alert alert-danger">{error}</div>}
-      <form onSubmit={handleSubmit}>
-        <div className="mb-3">
-            <label htmlFor="title" className="form-label">
-              Title<span style={{ color: 'red' }}> *</span>
-            </label>
-          <input type="text" className="form-control styled-input" id="title" value={title} onChange={(e) => setTitle(e.target.value)} required />
+    <div className="flex flex-col items-center justify-center">
+      <form
+        onSubmit={handleSubmit}
+        className="shadow-sm w-full max-w-sm bg-green-50 p-8 rounded-lg border border-black"
+      >
+        <div className="flex justify-between items-center mb-4">
+          <h1 className="text-2xl font-bold">Edit OKR</h1>
+          <button onClick={closeModal} className="close-button">
+            &times;
+          </button>
         </div>
-        <div className="mb-3">
-          <label htmlFor="description" className="form-label" style={{ marginTop: '10px' }}>Description<span style={{ color: 'red' }}> *</span></label>
-          <textarea className="form-control styled-input" id="description" value={description} onChange={(e) => setDescription(e.target.value)} required/>
-        </div>
-        <div className="mb-3">
-          <label htmlFor="startDate" className="form-label">Start Date<span style={{ color: 'red' }}> *</span></label>
-          <input type="date" className="form-control styled-input" id="startDate" value={startDate} onChange={(e) => setStartDate(e.target.value)} required />
-        </div>
-        <div className="mb-3">
-          <label htmlFor="endDate" className="form-label">End Date<span style={{ color: 'red' }}> *</span></label>
-          <input type="date" className="form-control styled-input" id="endDate" value={endDate} onChange={(e) => setEndDate(e.target.value)} required />
-        </div>
-        <div className="mb-3">
-          <label htmlFor="category" className="form-label">Category<span style={{ color: 'red' }}> *</span></label>
-          <select className="form-select styled-input" id="category" value={category} onChange={(e) => setCategory(e.target.value)} required>
-            <option value="">Select a category</option>
-            <option value="Department A">Department A</option>
-            <option value="Department B">Department B</option>
-          </select>
-        </div>
-        <div className="mb-3">
-          <label htmlFor="owners" className="form-label">Owners<span style={{ color: 'red' }}> *</span></label>
-          <ReactTags
-            tags={owners}
-            handleDelete={handleDelete}
-            handleAddition={handleAddition}
-          />
-        </div>
-        <div className="mb-3">
-          <label htmlFor="vertical" className="form-label">Vertical<span style={{ color: 'red' }}> *</span></label>
-          <select className="form-select styled-input" id="vertical" value={vertical} onChange={(e) => setVertical(e.target.value)} required>
-            <option value="">Select a vertical</option>
-            {verticalOptions.map((v) => (
-              <option key={v} value={v}>{v}</option>
+        {error && <div className="alert alert-danger">{error}</div>}
+        <FormInput
+          type="text"
+          label="Title"
+          value={title}
+          onChange={setTitle}
+          required
+        />
+        <FormInput
+          type="textarea"
+          label="Description"
+          value={description}
+          onChange={setDescription}
+          required
+        />
+        <FormInput
+          type="date"
+          label="Start Date"
+          value={startDate}
+          onChange={setStartDate}
+          required
+        />
+        <FormInput
+          type="date"
+          label="End Date"
+          value={endDate}
+          onChange={setEndDate}
+          required
+        />
+        <FormInput
+          type="select"
+          label="Category"
+          value={category}
+          onChange={setCategory}
+          required
+          options={categoryOptions}
+        />
+        <FormInput
+          type="select"
+          label="Vertical"
+          value={vertical}
+          onChange={setVertical}
+          required
+          options={verticalOptions}
+        />
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Owners <span className="text-red-500">*</span>
+          </label>
+          <div className="flex items-center mb-2">
+            <input
+              type="text"
+              value={ownerInput}
+              onChange={(e) => setOwnerInput(e.target.value)}
+              placeholder="Add an owner"
+              className="shadow w-full px-4 py-2 border rounded-lg transition-all duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-200 border-gray-300"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && ownerInput.trim() !== "") {
+                  handleAddition({ id: ownerInput, text: ownerInput });
+                  setOwnerInput("");
+                  e.preventDefault();
+                }
+              }}
+            />
+          </div>
+          <div className="flex flex-wrap">
+            {owners.map((owner) => (
+              <span
+                key={owner}
+                className="bg-gray-200 text-gray-700 py-1 px-3 rounded-full mr-2 mb-2 flex items-center"
+              >
+                {owner}
+                <button
+                  type="button"
+                  onClick={() => handleDelete(owner)}
+                  className="ml-2 text-red-500"
+                >
+                  &times;
+                </button>
+              </span>
             ))}
-          </select>
+          </div>
         </div>
-        <style jsx>{`
-          .container {
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #fff;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-          }
-          h1 {
-            text-align: center;
-            margin-bottom: 20px;
-            color: #333;
-          }
-          .form-label {
-            font-weight: bold;
-            color: #555;
-          }
-          .styled-input {
-            width: 100%;
-            padding: 10px;
-            margin-top: 5px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-          }
-          .styled-input:focus {
-            border-color: #007bff;
-            box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
-          }
-          .styled-button {
-            width: 10%;
-            padding: 6px;
-            background-color: #007bff;
-            border: none;
-            border-radius: 4px;
-            color: #fff;
-            font-size: 16px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-          }
-          .styled-button:hover {
-            background-color: #0056b3;
-          }
-          .alert-danger {
-            color: #721c24;
-            background-color: #f8d7da;
-            border-color: #f5c6cb;
-            padding: 10px;
-            border-radius: 4px;
-            margin-bottom: 20px;
-          }
-          .ReactTags__tag {
-            background: #007bff;
-            color: white;
-            border-radius: 20px;
-            padding: 5px 10px;
-            margin-right: 5px;
-            margin-bottom: 5px;
-          }
-          .ReactTags__tagInput {
-            width: 100%;
-          }
-        `}</style>
-        <button type="submit" className="btn btn-primary styled-button">Submit OKR</button>
+        <button
+          type="submit"
+          className={`w-full py-2 text-white rounded ${
+            owners.length > 0
+              ? "bg-blue-500 hover:bg-blue-600"
+              : "bg-gray-400 cursor-not-allowed"
+          }`}
+          disabled={owners.length === 0}
+        >
+          Submit OKR
+        </button>
       </form>
     </div>
   );

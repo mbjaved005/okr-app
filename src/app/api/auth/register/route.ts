@@ -1,20 +1,28 @@
-import { NextResponse } from 'next/server';
-import User from '@/models/User';
-import bcrypt from 'bcryptjs';
-import mongoose from '@/db/mongoose';
+import { NextResponse } from "next/server";
+import User from "@/models/User";
+import bcrypt from "bcryptjs";
+import mongoose from "@/db/mongoose";
 
 export async function POST(request: Request) {
   console.log("Received registration request");
   await mongoose.connection.readyState; // Check if the MongoDB connection is active
   console.log("MongoDB connection state:", mongoose.connection.readyState); // Log the connection state
   const { fullName, email, password, role } = await request.json();
-  console.log("Registration data received:", { fullName, email, password, role });
+  console.log("Registration data received:", {
+    fullName,
+    email,
+    password,
+    role,
+  });
 
   // Check if all fields are provided
   console.log("Checking if all fields are provided");
   if (!fullName || !email || !password || !role) {
     console.error("Registration error: All fields are required");
-    return NextResponse.json({ message: 'All fields are required' }, { status: 400 });
+    return NextResponse.json(
+      { message: "All fields are required" },
+      { status: 400 }
+    );
   }
 
   // Validate email format
@@ -22,14 +30,17 @@ export async function POST(request: Request) {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email)) {
     console.error("Registration error: Invalid email format");
-    return NextResponse.json({ message: 'Invalid email format' }, { status: 400 });
+    return NextResponse.json(
+      { message: "Invalid email format" },
+      { status: 400 }
+    );
   }
 
   // Ensure role is valid
-  const validRoles = ['Employee', 'Manager', 'Admin'];
+  const validRoles = ["Employee", "Manager", "Admin"];
   if (!validRoles.includes(role)) {
     console.error("Registration error: Invalid role");
-    return NextResponse.json({ message: 'Invalid role' }, { status: 400 });
+    return NextResponse.json({ message: "Invalid role" }, { status: 400 });
   }
 
   // Check if user already exists
@@ -38,13 +49,27 @@ export async function POST(request: Request) {
     const existingUser = await User.findOne({ email });
     console.log("Existing user check result:", existingUser);
     if (existingUser) {
-      console.error("Registration error: User already exists");
-      return NextResponse.json({ message: 'User already exists' }, { status: 400 });
+      console.error(
+        "Registration error: User already exists with the same email"
+      );
+      return NextResponse.json(
+        { message: "User already exists with the same email" },
+        { status: 400 }
+      );
     }
   } catch (err) {
     console.error("Database query error while checking existing user:", err);
-    console.error("Stack trace:", err instanceof Error ? err.stack : "No stack trace available"); // Log the stack trace for better debugging
-    return NextResponse.json({ message: 'Internal server error', error: err instanceof Error ? err.message : String(err) }, { status: 500 });
+    console.error(
+      "Stack trace:",
+      err instanceof Error ? err.stack : "No stack trace available"
+    ); // Log the stack trace for better debugging
+    return NextResponse.json(
+      {
+        message: "Internal server error",
+        error: err instanceof Error ? err.message : String(err),
+      },
+      { status: 500 }
+    );
   }
 
   // Hash the password
@@ -60,9 +85,21 @@ export async function POST(request: Request) {
     console.log("User registered successfully:", { fullName, email, role });
   } catch (err) {
     console.error("Error saving user to the database:", err);
-    console.error("Stack trace:", err instanceof Error ? err.stack : "No stack trace available"); // Log the stack trace for better debugging
-    return NextResponse.json({ message: 'Internal server error', error: err instanceof Error ? err.message : String(err) }, { status: 500 });
+    console.error(
+      "Stack trace:",
+      err instanceof Error ? err.stack : "No stack trace available"
+    ); // Log the stack trace for better debugging
+    return NextResponse.json(
+      {
+        message: "Internal server error",
+        error: err instanceof Error ? err.message : String(err),
+      },
+      { status: 500 }
+    );
   }
 
-  return NextResponse.json({ message: 'User registered successfully' }, { status: 201 });
+  return NextResponse.json(
+    { message: "User registered successfully" },
+    { status: 201 }
+  );
 }

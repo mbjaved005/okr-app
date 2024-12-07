@@ -5,8 +5,26 @@ import { verifyToken } from "@/utils/jwt";
 
 export async function PUT(request: Request) {
   await mongoose.connection.readyState; // Check if the MongoDB connection is active
-  const { id, title, description, startDate, endDate, category, vertical } =
-    await request.json();
+  const {
+    id,
+    title,
+    description,
+    startDate,
+    endDate,
+    category,
+    vertical,
+    owners,
+  } = await request.json();
+  console.log("Edit request:", {
+    id,
+    title,
+    description,
+    startDate,
+    endDate,
+    category,
+    vertical,
+    owners,
+  });
   if (
     !id ||
     !title ||
@@ -14,7 +32,8 @@ export async function PUT(request: Request) {
     !startDate ||
     !endDate ||
     !category ||
-    !vertical
+    !vertical ||
+    !owners
   ) {
     console.error("Edit error: All fields are required");
     return NextResponse.json(
@@ -40,7 +59,7 @@ export async function PUT(request: Request) {
 
     const okr = await OKR.findOneAndUpdate(
       { _id: id, userId: userId },
-      { title, description, startDate, endDate, category, vertical },
+      { title, description, startDate, endDate, category, vertical, owners },
       { new: true }
     );
 

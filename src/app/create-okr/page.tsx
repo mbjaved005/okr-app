@@ -58,9 +58,7 @@ const CreateOKRPage = ({
         if (response.ok) {
           const data = await response.json();
           console.log("Fetched Users Data:", data);
-          const options = data.map(
-            (item: any) => `${item.fullName} ${item.email}`
-          );
+          const options = data.map((item) => `${item.fullName} ${item.email}`);
           setUserOptions(options);
           console.log("Fetched  Users for owners ", options);
         } else {

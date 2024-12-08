@@ -129,7 +129,11 @@ const UserManagementPage = () => {
         "Stack trace:",
         err instanceof Error ? err.stack : "No stack trace available"
       );
-      setError(err.message);
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("An unknown error occurred");
+      }
     }
   };
 
@@ -168,7 +172,11 @@ const UserManagementPage = () => {
         "Stack trace:",
         err instanceof Error ? err.stack : "No stack trace available"
       );
-      setError(err.message);
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("An unknown error occurred");
+      }
     }
   };
 
@@ -199,7 +207,11 @@ const UserManagementPage = () => {
         "Stack trace:",
         err instanceof Error ? err.stack : "No stack trace available"
       );
-      setError(err.message);
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("An unknown error occurred");
+      }
     }
   };
 
